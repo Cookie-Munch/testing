@@ -121,7 +121,9 @@ export function cookieMunchStub(options: StubOptions = {}): void {
   w.CookieMunch = api;
   w.Cookiebot = api;
 
-  const queued: any[] = (w.__fdConsent && w.__fdConsent.q) || [];
+  const alt = w.__consent && typeof w.__consent === 'object' && ('q' in w.__consent || 'version' in w.__consent) ? w.__consent : undefined;
+  const qOf = (o: any): any[] => (o && Array.isArray(o.q) ? o.q : []);
+  const queued: any[] = [...qOf(w.__fdConsent), ...(alt && alt !== w.__fdConsent ? qOf(alt) : [])];
   const fd: Record<string, any> = {
     version: 1,
     provider: 'stub',
@@ -152,6 +154,7 @@ export function cookieMunchStub(options: StubOptions = {}): void {
   };
   fd.q = { push: (...calls: any[][]) => (calls.forEach(run), 0) };
   w.__fdConsent = fd;
+  if (w.__consent === undefined || alt) w.__consent = fd;
   queued.forEach(run);
   // For tests: change the answer as a visitor would (`window.__cmStub.decide('accept')`).
   w.__cmStub = { decide: (d: StubDecision) => decide(d, d === 'accept' ? 'accept' : d === 'reject' ? 'decline' : 'selection') };
